@@ -178,9 +178,7 @@ build() {
   export CUDAHOSTCXX="${CXX}"
   cd "${srcdir}/${pkgbase}-cuda"
   cmake "${_cmake_cuda_args[@]}"
-  # GPU builds are very memory intensive. Limit the number of threads so that
-  # it fits on our build server.
-  cmake --build build -j 16
+  cmake --build build
   cd build
   install -Dm644 ../docs/python/README.rst docs/python/README.rst
   ln -s ../setup.py .
@@ -196,7 +194,7 @@ build() {
   echo 'string(APPEND CMAKE_CXX_FLAGS " -march=haswell")' \
     >> cmake/adjust_global_compile_flags.cmake
   cmake "${_cmake_cuda_args[@]}"
-  cmake --build build -j 16
+  cmake --build build
   cd build
   install -Dm644 ../docs/python/README.rst docs/python/README.rst
   ln -s ../setup.py .
