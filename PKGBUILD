@@ -125,7 +125,8 @@ build() {
     -DCMAKE_CUDA_ARCHITECTURES="$(_valid_sm)"
     -DCMAKE_CUDA_STANDARD_REQUIRED=ON
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
-    -Donnxruntime_NVCC_THREADS="$(nproc)"
+    # WARNING: too many threads will eat all your RAM
+    -Donnxruntime_NVCC_THREADS=2
     -Donnxruntime_USE_CUDA=ON
     -Donnxruntime_USE_NCCL=ON
     -Donnxruntime_CUDA_HOME=/opt/cuda
