@@ -13,9 +13,9 @@ pkgname=(
   "python-${pkgbase}-rocm"
   "python-${pkgbase}-opt-rocm"
 )
-pkgver=1.20.2
+pkgver=1.22.0
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=10
+pkgrel=1
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -31,12 +31,10 @@ makedepends+=("${_pydepends[@]}")
 #TODO: Add migraphx for ROCm and tensorrt for CUDA.
 optdepends=('openmpi: Distributed memory parallelization')
 source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
-        https://github.com/microsoft/onnxruntime/commit/704523c2d8a142f723a5cc242c62f5b20afa4944.patch
         "${pkgbase}-install-orttraining-files.patch"
         "${pkgbase}-system-dnnl.patch"
         "${pkgbase}-system-flatbuffers.patch")
-b2sums=('3b99c04c8d78c882b824da05d76167a7a9f0a08d64d7ba26f66562ad0ab3264a2c74d617dc8972016b5302304f2234e45b59f4574b567f1685f11d546f9ec7bd'
-        '543842b2713b854a17bf27d9627331a4902555418eb83bdcc77eaa3af88c2d4ebb642fd49f6347cdc906a189afba450f4a09ab85161ea42bce28f27b50502980'
+b2sums=('45331976d1bead8668099e84c076aa63386f929146f826326aefee8473330f3d1fbf56e0ae49fc7d82b673748181ce692327c734d0f192eccf833eaa794e0cf4'
         'af5a5524dd9b5fe0052d2d0da232de7f219d4abffb37a7a321145b428d06fcb2901ab4e76b6754440146c223fc761bcbdfeee230167d33aa4434b82a1ebad5c0'
         '57c79382537f5bd25a891de3a99415a6dd8f490676df213016e897040c88e28fb5f5a5c3a8a98057e3f6630edb3ddcaeae36dcc47d5354abaafafc36e579f731'
         '207f020f310a7b447b4dc2fac74819f80099f088fdad6e42d67d0f01aa35bb5b9475bd006d9bec318127ae2db3d7ae3df33382fa16339d936c1dfb3832010837')
@@ -53,7 +51,6 @@ _valid_gfx() {
 prepare() {
   cd "${pkgbase}"
 
-  patch -Np1 -i "${srcdir}/704523c2d8a142f723a5cc242c62f5b20afa4944.patch"
   patch -Np1 -i "${srcdir}/${pkgbase}-system-dnnl.patch"
 
   # Find system nlohmann-json
