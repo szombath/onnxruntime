@@ -147,14 +147,22 @@ build() {
   export CXX="$NVCC_CCBIN"
   export CC="${NVCC_CCBIN/g++/gcc}"
 
+
+  ##### onnxruntime-cuda
+
   echo "Build onnxruntime with CUDA without optimization"
   cd "${srcdir}/${pkgbase}-cuda"
   cmake "${_cmake_cuda_args[@]}"
   cmake --build build
-  cd build
-  install -Dm644 ../docs/python/README.rst docs/python/README.rst
-  ln -s ../setup.py .
+
+  # Manually fix https://github.com/microsoft/onnxruntime/issues/24570
+  mkdir onnxruntime/capi
+  python setup.py --help # We have to call it like this once to generate the file we need.
+  cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
+
+
+  ##### onnxruntime-opt-cuda
 
   echo "Build onnxruntime with CUDA with AVX optimizations"
   cd "${srcdir}/${pkgbase}-opt-cuda"
@@ -164,19 +172,29 @@ build() {
     >> cmake/adjust_global_compile_flags.cmake
   cmake "${_cmake_cuda_args[@]}"
   cmake --build build
-  cd build
-  install -Dm644 ../docs/python/README.rst docs/python/README.rst
-  ln -s ../setup.py .
+
+  # Manually fix https://github.com/microsoft/onnxruntime/issues/24570
+  mkdir onnxruntime/capi
+  python setup.py --help # We have to call it like this once to generate the file we need.
+  cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
+
+
+  ##### onnxruntime-rocm
 
   echo "Build onnxruntime with ROCm without optimization"
   cd "${srcdir}/${pkgbase}-rocm"
   cmake "${_cmake_rocm_args[@]}"
   cmake --build build
-  cd build
-  install -Dm644 ../docs/python/README.rst docs/python/README.rst
-  ln -s ../setup.py .
+
+  # Manually fix https://github.com/microsoft/onnxruntime/issues/24570
+  mkdir onnxruntime/capi
+  python setup.py --help # We have to call it like this once to generate the file we need.
+  cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
+
+
+  ##### onnxruntime-opt-rocm
 
   echo "Build onnxruntime with ROCm with AVX optimizations"
   cd "${srcdir}/${pkgbase}-opt-rocm"
@@ -186,9 +204,11 @@ build() {
     >> cmake/adjust_global_compile_flags.cmake
   cmake "${_cmake_rocm_args[@]}"
   cmake --build build
-  cd build
-  install -Dm644 ../docs/python/README.rst docs/python/README.rst
-  ln -s ../setup.py .
+
+  # Manually fix https://github.com/microsoft/onnxruntime/issues/24570
+  mkdir onnxruntime/capi
+  python setup.py --help # We have to call it like this once to generate the file we need.
+  cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
 }
 
@@ -200,7 +220,6 @@ package_onnxruntime() {
 
   cd "${pkgbase}-cuda"
   DESTDIR="${pkgdir}" cmake --install build
-  rm -r "${pkgdir}"/usr/include/cudnn_*
 
   install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
@@ -216,7 +235,6 @@ package_onnxruntime-opt() {
 
   cd "${pkgbase}-opt-cuda"
   DESTDIR="${pkgdir}" cmake --install build
-  rm -r "${pkgdir}"/usr/include/cudnn_*
 
   install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
@@ -254,10 +272,10 @@ package_python-onnxruntime() {
                'cudnn: nVidia GPU acceleration'
                'nccl: nVidia GPU acceleration')
 
-  cd "${pkgbase}-cuda/build"
+  cd "${pkgbase}-cuda"
   python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ../ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
 package_python-onnxruntime-opt() {
@@ -269,10 +287,10 @@ package_python-onnxruntime-opt() {
                'cudnn: nVidia GPU acceleration'
                'nccl: nVidia GPU acceleration')
 
-  cd "${pkgbase}-opt-cuda/build"
+  cd "${pkgbase}-opt-cuda"
   python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ../ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
 package_python-onnxruntime-rocm() {
@@ -281,10 +299,10 @@ package_python-onnxruntime-rocm() {
   provides=("python-${pkgbase}=${pkgver}")
   conflicts=("python-${pkgbase}")
 
-  cd "${pkgbase}-rocm/build"
+  cd "${pkgbase}-rocm"
   python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ../ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
 package_python-onnxruntime-opt-rocm() {
@@ -293,8 +311,8 @@ package_python-onnxruntime-opt-rocm() {
   provides=("python-${pkgbase}=${pkgver}")
   conflicts=("python-${pkgbase}")
 
-  cd "${pkgbase}-opt-rocm/build"
+  cd "${pkgbase}-opt-rocm"
   python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 ../LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ../ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
