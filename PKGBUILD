@@ -15,7 +15,7 @@ pkgname=(
 )
 pkgver=1.22.2
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=1
+pkgrel=2
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -80,6 +80,9 @@ prepare() {
 
   patch -Np1 -i "${srcdir}/${pkgbase}-install-orttraining-files.patch"
   patch -Np1 -i "${srcdir}/${pkgbase}-system-flatbuffers.patch"
+
+  # Fix build with abseil 20250814; see https://github.com/microsoft/onnxruntime/issues/25815
+  sed -i '/^absl::low_level_hash$/d' cmake/external/abseil-cpp.cmake
 
   cd "${srcdir}"
   cp -r "${pkgbase}" "${pkgbase}-cuda"
