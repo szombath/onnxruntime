@@ -17,7 +17,7 @@ pkgname=(
 )
 pkgver=1.22.2
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=3
+pkgrel=4
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -247,6 +247,7 @@ package_onnxruntime-cuda() {
   depends+=('cuda' 'cudnn' 'nccl' 'onednn')
   provides=("${pkgbase}=${pkgver}")
   conflicts=("${pkgbase}")
+  replaces=("${pkgbase}")
 
   cd "${pkgbase}-opt-cuda"
   DESTDIR="${pkgdir}" cmake --install build
@@ -260,6 +261,7 @@ package_onnxruntime-opt-cuda() {
   depends+=('cuda' 'cudnn' 'nccl' 'onednn')
   provides=("${pkgbase}=${pkgver}")
   conflicts=("${pkgbase}")
+  replaces=("${pkgbase}-opt")
 
   cd "${pkgbase}-opt-cuda"
   DESTDIR="${pkgdir}" cmake --install build
