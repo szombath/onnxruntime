@@ -17,7 +17,7 @@ pkgname=(
 )
 pkgver=1.22.2
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=4
+pkgrel=5
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -34,15 +34,21 @@ makedepends+=("${_pydepends[@]}")
 source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
         "${pkgbase}-install-orttraining-files.patch"
         "${pkgbase}-system-dnnl.patch"
-        "${pkgbase}-system-flatbuffers.patch")
+        "${pkgbase}-system-flatbuffers.patch"
+        fix-gcc-15.patch
+        deps-cutlass-4.2.0.patch
+        fix-thrust-api.patch)
 b2sums=('ea6772d6962ff2d88f6803f3a253f88593249c431e88bf745b3f81e493176ab2ae70d13243e4e932c6c4bf56fe4d12c19ef5c5e7a6a4a2ba013a9a1ee22fa136'
         'af5a5524dd9b5fe0052d2d0da232de7f219d4abffb37a7a321145b428d06fcb2901ab4e76b6754440146c223fc761bcbdfeee230167d33aa4434b82a1ebad5c0'
         '57c79382537f5bd25a891de3a99415a6dd8f490676df213016e897040c88e28fb5f5a5c3a8a98057e3f6630edb3ddcaeae36dcc47d5354abaafafc36e579f731'
-        '207f020f310a7b447b4dc2fac74819f80099f088fdad6e42d67d0f01aa35bb5b9475bd006d9bec318127ae2db3d7ae3df33382fa16339d936c1dfb3832010837')
+        '207f020f310a7b447b4dc2fac74819f80099f088fdad6e42d67d0f01aa35bb5b9475bd006d9bec318127ae2db3d7ae3df33382fa16339d936c1dfb3832010837'
+        'eda81fc2c2a9e9a241a1147cc470a90f437b559fac6c6c2da3d8d70b5e3492fcc98617aa3dbaec6d9548c7a370b3e825297f4ec98e2c067085dd5ef403340ee2'
+        '33809e4c3e99c22e5f066c8cbaebcb9f9a6165104c86be5dba65148e9bc7af01ace6580c7607eb73767f1c5e1b159805726cfb8f7f67b763033e24c00c31770f'
+        'b0b58e2eb42a38956ef9e86b853d413c2fd002737d37721962dd9e1fc5c39c1ef4594325c6f6081f2b4cdce39a14907dbebc156645fa25ff3f2bbbce6417cd14')
 
 _valid_sm() {
   # Check PKGBUILDs of python-pytorch and tensorflow for CUDA architectures built by official packages
-  echo "52-real;53-real;60-real;61-real;62-real;70-real;72-real;75-real;80-real;86-real;87-real;89-real;90-real;90-virtual"
+  echo "75-real;80-real;86-real;87-real;88-real;89-real;90-real;100-real;103-real;110-real;120-real;121-real;121-virtual"
 }
 
 _valid_gfx() {
@@ -85,6 +91,29 @@ prepare() {
 
   # Fix build with abseil 20250814; see https://github.com/microsoft/onnxruntime/issues/25815
   sed -i '/^absl::low_level_hash$/d' cmake/external/abseil-cpp.cmake
+
+  # Fix build with GCC 15
+  patch -p1 -i "${srcdir}/fix-gcc-15.patch"
+
+  # Update deprecated CUDA api (#24733)
+  git cherry-pick -n ed7c234b2535eb272462dd41cfa6cfb1ff94781c
+  # Update deprecated CCCL API (#25246)
+  git cherry-pick -n a2bd54bc8c59562428f6b09d3f64f9e735599cd4
+  # Format *.cu and *.cuh with lintrunner (#25189)
+  git checkout 7a6cef6fe3672c5d59f1925e5f7c0a03dcfbc90e -- \
+    onnxruntime/contrib_ops/cuda/moe/ft_moe/moe_kernel.cu \
+    orttraining/orttraining/training_ops/cuda/reduction/all_impl.cu \
+    orttraining/orttraining/training_ops/cuda/tensor/gather_grad_impl.cu
+  # Fix cuda 12.9 windows build (#25317)
+  git cherry-pick -n 7c18d896b033dba80113efb720bd8842f8c23e33
+  # [CUDA] Upgrade cutlass to 3.9.2 (#24794)
+  git cherry-pick -n 8983424d9a8d0a39d065b0e353d6fd3f2b2a638c
+
+  # Bump cutlass to v4.2 which supports CUDA 13 https://github.com/NVIDIA/cutlass/pull/2587
+  patch -p1 -i "${srcdir}/deps-cutlass-4.2.0.patch"
+
+  # Fix thrust and cub API usage
+  patch -p1 -i "${srcdir}/fix-thrust-api.patch"
 
   cd "${srcdir}"
   cp -r "${pkgbase}" "${pkgbase}-cpu"
