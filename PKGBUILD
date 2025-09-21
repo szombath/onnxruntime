@@ -17,7 +17,7 @@ pkgname=(
 )
 pkgver=1.22.2
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=5
+pkgrel=6
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -312,7 +312,6 @@ package_onnxruntime-rocm() {
 }
 
 package_onnxruntime-opt-rocm() {
-  echo "foo"
   pkgdesc="$_pkgdesc (with ROCm and AVX2 CPU optimizations)"
   depends+=('rocm-hip-sdk' 'roctracer' 'rccl')
   provides=("${pkgbase}=${pkgver}")
@@ -327,6 +326,8 @@ package_onnxruntime-opt-rocm() {
 package_python-onnxruntime-cpu() {
   pkgdesc="$_pkgdesc (CPU only)"
   depends+=("${pkgbase}-cpu" "${_pydepends[@]}")
+  provides=("python-${pkgbase}=${pkgver}")
+  conflicts=("python-${pkgbase}")
 
   cd "${pkgbase}-cpu"
   python -m installer --destdir="${pkgdir}" dist/*.whl
@@ -338,6 +339,7 @@ package_python-onnxruntime-cuda() {
   pkgdesc="$_pkgdesc (with CUDA)"
   depends+=("${pkgbase}-cuda" "${_pydepends[@]}")
   provides=("python-${pkgbase}=${pkgver}")
+  conflicts=("python-${pkgbase}")
   replaces=("python-${pkgbase}")
 
   cd "${pkgbase}-cuda"
@@ -351,6 +353,7 @@ package_python-onnxruntime-opt-cuda() {
   depends+=("${pkgbase}-opt-cuda" "${_pydepends[@]}")
   provides=("python-${pkgbase}=${pkgver}")
   conflicts=("python-${pkgbase}")
+  replaces=("python-${pkgbase}-opt")
 
   cd "${pkgbase}-opt-cuda"
   python -m installer --destdir="${pkgdir}" dist/*.whl

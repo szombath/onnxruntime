@@ -1,6 +1,6 @@
 pkgbase = onnxruntime
 	pkgver = 1.22.2
-	pkgrel = 5
+	pkgrel = 6
 	url = https://github.com/microsoft/onnxruntime
 	arch = x86_64
 	license = MIT
@@ -122,6 +122,8 @@ pkgname = python-onnxruntime-cpu
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
+	provides = python-onnxruntime=1.22.2
+	conflicts = python-onnxruntime
 
 pkgname = python-onnxruntime-cuda
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with CUDA)
@@ -140,6 +142,7 @@ pkgname = python-onnxruntime-cuda
 	depends = python-protobuf
 	depends = python-packaging
 	provides = python-onnxruntime=1.22.2
+	conflicts = python-onnxruntime
 	replaces = python-onnxruntime
 
 pkgname = python-onnxruntime-opt-cuda
@@ -160,6 +163,7 @@ pkgname = python-onnxruntime-opt-cuda
 	depends = python-packaging
 	provides = python-onnxruntime=1.22.2
 	conflicts = python-onnxruntime
+	replaces = python-onnxruntime-opt
 
 pkgname = python-onnxruntime-rocm
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with ROCm)
