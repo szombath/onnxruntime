@@ -27,7 +27,7 @@ _pydepends=('python-numpy' 'python-coloredlogs' 'python-psutil'
             'python-py-cpuinfo' 'python-sympy' 'python-scipy' 'python-pillow'
             'python-flatbuffers' 'python-protobuf' 'python-packaging')
 makedepends=('git' 'cmake' 'ninja' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
-             'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'gcc14' 'onednn'
+             'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
              'cuda' 'cudnn' 'nccl' 'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer')
 makedepends+=("${_pydepends[@]}")
 #TODO: Add migraphx for ROCm and tensorrt for CUDA.
