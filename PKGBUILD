@@ -15,36 +15,63 @@ pkgname=(
   "python-${pkgbase}-rocm"
   "python-${pkgbase}-opt-rocm"
 )
-pkgver=1.24.4
+pkgver=1.26.0
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=9
+pkgrel=1
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
-depends=('abseil-cpp' 'boost-libs')
 # https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/python/tools/transformers/requirements.txt
 _pydepends=('python-numpy' 'python-psutil' 'python-py-cpuinfo' 'python-sympy'
             'python-scipy' 'python-pillow' 'python-flatbuffers'
             'python-protobuf' 'python-packaging')
 makedepends=('git' 'cmake' 'ninja' 'boost' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
+             're2' 'protobuf' 'microsoft-gsl' 'flatbuffers' 'onnx' 'eigen' 'dlpack' 'tensorboard' 'cpuinfo' 'safeint'
              'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
-             'cuda' 'cudnn' 'nccl' 'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer' 'migraphx')
+             'cuda' 'cudnn' 'cudnn-frontend' 'nccl'
+             'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer' 'migraphx')
 makedepends+=("${_pydepends[@]}")
-#TODO: Add tensorrt for CUDA.
+# onnxruntime uses internal files of abseil and tensorboard,
+# so we cannot use the binary Arch Linux packages and need to build them
+# from source as part of ONNX runtime.
+# TODO Check for new versions in cmake/deps.txt with every onnxruntime release
+_abseil_ver=20250814.0
+_tensorboard_ver=373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81
+_re2_ver=2024-07-02
+_flatbuffers_ver=23.5.26
+_cutlass_ver=4.4.2
 source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
+        "${pkgbase}-abseil-cpp-${_abseil_ver}.tar.gz::https://github.com/abseil/abseil-cpp/archive/refs/tags/${_abseil_ver}.tar.gz"
+        "${pkgbase}-tensorboard-${_tensorboard_ver}.tar.gz::https://github.com/tensorflow/tensorboard/archive/${_tensorboard_ver}.tar.gz"
+        "${pkgbase}-re2-${_re2_ver}.tar.gz::https://github.com/google/re2/archive/refs/tags/${_re2_ver}.tar.gz"
+        "${pkgbase}-flatbuffers-${_flatbuffers_ver}.tar.gz::https://github.com/google/flatbuffers/archive/refs/tags/v${_flatbuffers_ver}.tar.gz"
+        "${pkgbase}-cutlass-${_cutlass_ver}.tar.gz::https://github.com/NVIDIA/cutlass/archive/refs/tags/v${_cutlass_ver}.tar.gz"
         "${pkgbase}-install-orttraining-files.patch"
         "${pkgbase}-system-dnnl.patch"
         "${pkgbase}-system-flatbuffers.patch"
         "${pkgbase}-remove-pkg_resources.patch"
         fix-thrust-api.patch
-        "${pkgbase}-cuda-moe-no-tensor-dumper.patch")
-b2sums=('4edead573c6b080e01e9afbcc13692b3016b757f761d48aaf10e0148bc371333e2e14d605158495bb84dca99359db0d7b3c98795816cdacc63d9d8487f194c93'
+        use-system-boost-mp11.patch
+        onnxruntime-abseil-cuda13-member-template.patch
+        onnxruntime-cuda13-cccl-header-fix.patch
+        onnxruntime-cutlass-4.4.2.patch
+        onnxruntime-cuda-softmax-stream.patch)
+b2sums=('5f7561e4758d96aae2d6d278f88b200df3ef23b3e909d756d538c45b34b5cb81514262521daa655a1e35bc67acd2f2ddacb2ae89a6415555c0c2b321b16af1e5'
+        'f60f3604215f64f33fad902637360050061ec62cfa6413cafc4cd3794a1898c7ee67f7b6edf78e5cb7c6b0ed86b8d80338ad4abee3f2664e391c2cfae5997220'
+        'eb527f92bfce897a0dba4757ebe6be11020e172b9b219aec5089645a37f9b0e5bd7a977222b20db193c11d834f6dd46a09ca3633039a4f6a84528d9b0ecce057'
+        '86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96'
+        '147425e7c018072f4ae4cdb3e034a4f434362d88d5e27b09375965993c279acfbed36064014c8f4fbe3fb81175ac0aa9b07629675e2c7ad33d59a9c85f2c3bb8'
+        'd542daa5a809b1dc8cca81319b9b45437ad9965aba4d6b4fbf7a6d6477f241f0b9aa94045834977dcd16924ed88cde2c2da5795affb02290cb2247de25f0ec3e'
         'af5a5524dd9b5fe0052d2d0da232de7f219d4abffb37a7a321145b428d06fcb2901ab4e76b6754440146c223fc761bcbdfeee230167d33aa4434b82a1ebad5c0'
         '57c79382537f5bd25a891de3a99415a6dd8f490676df213016e897040c88e28fb5f5a5c3a8a98057e3f6630edb3ddcaeae36dcc47d5354abaafafc36e579f731'
         '207f020f310a7b447b4dc2fac74819f80099f088fdad6e42d67d0f01aa35bb5b9475bd006d9bec318127ae2db3d7ae3df33382fa16339d936c1dfb3832010837'
         'dfa9e70fdcd0f2c2fafec7f1961e66fa9661a03b8dba08c7d2329d018d8ebd4481337c0ddc6de393d7f4a032bd6011ccfad28d89aa0142ce9e01ead0bafcf079'
         'b0b58e2eb42a38956ef9e86b853d413c2fd002737d37721962dd9e1fc5c39c1ef4594325c6f6081f2b4cdce39a14907dbebc156645fa25ff3f2bbbce6417cd14'
-        '12f95b2a5b6a5414ee23f8ee6a3d433b3ab648801c6974d265a3d554d6f9f8c5f71aec810b2d83f0a2f75bdfe8d2aecbaa5d3197c26f95c1a59c6ef2bb5a8279')
+        '2f63abb217ef0f63d2f5d9985be217ad1e3b581a75ed3396b8c986b6004ce94fd116a8b5aa4f0bcfc62637004881950027bbbc57c5ccaec3bdbb7a2b529a113c'
+        'dd835a301a0ba2cdc6a685c568d9490d652dabcf9dfee0294e765c308bdf7852cf4586f592c0df569d72c2e53e3d413b8020d46de1e2467cfd5b8834a15f1f24'
+        'ea0929ba3bae146ad4a0f670f24162fba0f3f6978c1409f542aaae4565e0377744c9eb6079bc62229be5525f6b22b2923b757bfd8a2f6bba8ef69377fe342486'
+        'dce07bc1fd5b69bd34396dcebccb022d4ae73278dbe6def23006c5ef7ce690dd7af370dcd5efbbdc9a28c7871cc2b7755d44e5171973fc0219aa80f0900962ff'
+        '40cbcec058f8198c0462139eb5c4bfa251f9c58e9215fc3ce3124796717a36e13cf4197d8ee6f34e2b2b51549649d70a7c3b9214bc3504bfcb2dff043bce1510')
 
 _valid_sm() {
   # Check PKGBUILDs of python-pytorch and tensorflow for CUDA architectures built by official packages
@@ -58,27 +85,11 @@ _valid_gfx() {
 
 prepare() {
   cd "${pkgbase}"
+  # Nuke -Werror flags
+  find cmake/ -type f -name "*.cmake" -exec sed -i 's/-Werror//g' {} +
+  find "$srcdir/abseil-cpp-${_abseil_ver}" -type f \( -name "*.cmake" -o -name "CMakeLists.txt" \) -exec sed -i 's/-Werror//g' {} +
 
   patch -Np1 -i "${srcdir}/${pkgbase}-system-dnnl.patch"
-
-  # Find system nlohmann-json
-  sed 's|3.10 ||g' \
-    -i cmake/external/onnxruntime_external_deps.cmake
-
-  # Find system chrono-date
-  sed -e 's|${DEP_SHA1_date}|&\n \ \ \ \ \ \FIND_PACKAGE_ARGS NAMES date|g' \
-      -e 's|date_interface|date::date-tz|g' \
-      -i cmake/external/onnxruntime_external_deps.cmake \
-      -i cmake/onnxruntime_common.cmake \
-      -i cmake/onnxruntime_unittests.cmake
-
-  # Find system abseil-cpp
-  sed 's|ABSL_PATCH_COMMAND}|&\n\ \ \ \ \FIND_PACKAGE_ARGS NAMES absl|g' \
-    -i cmake/external/abseil-cpp.cmake
-
-  # Find system cxxopts
-  sed 's|${DEP_SHA1_cxxopts}|&\n\ \ \ \ \FIND_PACKAGE_ARGS NAMES cxxopts|g' \
-    -i cmake/external/onnxruntime_external_deps.cmake
 
   patch -Np1 -i "${srcdir}/${pkgbase}-install-orttraining-files.patch"
   patch -Np1 -i "${srcdir}/${pkgbase}-system-flatbuffers.patch"
@@ -89,11 +100,36 @@ prepare() {
   # Fix thrust and cub API usage
   patch -p1 -i "${srcdir}/fix-thrust-api.patch"
 
+  # Use mp11 from system boost
+  patch -p1 -i "${srcdir}/use-system-boost-mp11.patch"
+
+  # Work around the CUDA 13.3 cudafe++ regression that mis-parses CCCL's
+  # global-qualified partial specializations. Backported from upstream commit
+  # 40b76e7ba36 ("Fix Linux CUDA 13.3 build (abseil + CCCL parse errors)").
+  patch -p1 -i "${srcdir}/${pkgbase}-cuda13-cccl-header-fix.patch"
+
   # Remove pkg_resources use
   patch -p1 -i "${srcdir}/${pkgbase}-remove-pkg_resources.patch"
 
-  # Fix gcc 16 "instantiating erroneous template" error
-  patch -p1 -i "${srcdir}/${pkgbase}-cuda-moe-no-tensor-dumper.patch"
+  # Fix CUDA training-op build against the new SoftMaxComputeHelper signature
+  # (cudaStream_t instead of onnxruntime::Stream*); see upstream commit
+  # 879f65911a8 which updated softmax.cc but not the orttraining loss kernels.
+  patch -p1 -i "${srcdir}/${pkgbase}-cuda-softmax-stream.patch"
+
+  # Fix abseil member alias template parse/instantiation errors with the
+  # CUDA 13.3 host front-end and recent GCC. Hoists IfRRef<...>::AddPtr<...>
+  # to a top-level IfRRefAddPtr<...> alias template. Backported from upstream
+  # commit 40b76e7ba36; see https://github.com/abseil/abseil-cpp/issues/2075
+  cd "${srcdir}/abseil-cpp-${_abseil_ver}"
+  patch -p1 -i "${srcdir}/${pkgbase}-abseil-cuda13-member-template.patch"
+
+  # onnxruntime consumes the cutlass source tree (include + examples + tools)
+  # directly via FetchContent, so the binary cutlass-headers package cannot
+  # satisfy it; we provide the pinned cutlass source instead. The PATCH_COMMAND
+  # onnxruntime would normally run is skipped when FETCHCONTENT_SOURCE_DIR is
+  # set, so apply onnxruntime's cutlass 4.4.2 patch here.
+  cd "${srcdir}/cutlass-${_cutlass_ver}"
+  patch -p1 -i "${srcdir}/${pkgbase}-cutlass-${_cutlass_ver}.patch"
 
   cd "${srcdir}"
   cp -r "${pkgbase}" "${pkgbase}-cpu"
@@ -121,20 +157,30 @@ build() {
     -DBUILD_TESTING=OFF
     -Donnxruntime_ENABLE_TRAINING=ON
     -Donnxruntime_ENABLE_LAZY_TENSOR=OFF
-    # Stable release of eigen is too old for onnxruntime.
-    -Donnxruntime_USE_PREINSTALLED_EIGEN=OFF
-    -DCMAKE_CXX_STANDARD=17)
+    -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+    -DFETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS
+    -DFETCHCONTENT_SOURCE_DIR_ABSEIL_CPP="$srcdir/abseil-cpp-${_abseil_ver}"
+    -DFETCHCONTENT_SOURCE_DIR_TENSORBOARD="$srcdir/tensorboard-${_tensorboard_ver}"
+    -DFETCHCONTENT_SOURCE_DIR_RE2="$srcdir/re2-${_re2_ver}"
+    -DFETCHCONTENT_SOURCE_DIR_FLATBUFFERS="$srcdir/flatbuffers-${_flatbuffers_ver}"
+    -DFETCHCONTENT_SOURCE_DIR_CUTLASS="$srcdir/cutlass-${_cutlass_ver}"
+    -DONNX_CUSTOM_PROTOC_EXECUTABLE=/usr/bin/protoc
+    -DCMAKE_CXX_STANDARD=20)
 
   # Use protobuf-lite instead of full protobuf to workaround symbol conflicts
   # with onnx; see https://github.com/onnx/onnx/issues/1277 for details.
   _cmake_args+=(
     -Donnxruntime_USE_FULL_PROTOBUF=OFF)
 
+  # Silence template parsing errors
+  CXXFLAGS+=" -Wno-template-body"
+
   CXXFLAGS+=" -I/opt/cuda/targets/x86_64-linux/include"
   # Fix gcc 16 with absl 20260526
   export CUDAFLAGS+=" -Xcompiler -Wno-error=template-body"
   local _cmake_cuda_args=("${_cmake_args[@]}"
     -DCMAKE_CUDA_ARCHITECTURES="$(_valid_sm)"
+    -DCMAKE_CUDA_FLAGS="-Xcompiler -Wno-template-body"
     -DCMAKE_CUDA_STANDARD_REQUIRED=ON
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
     # WARNING: too many threads will eat all your RAM
@@ -242,7 +288,7 @@ package_onnxruntime-cpu() {
 
 package_onnxruntime-cuda() {
   pkgdesc="$_pkgdesc (with CUDA)"
-  depends+=('cuda' 'cudnn' 'nccl' 'onednn')
+  depends+=('cuda' 'cudnn' 'cudnn-frontend' 'nccl' 'onednn')
   provides=("${pkgbase}=${pkgver}")
   conflicts=("${pkgbase}")
   replaces=("${pkgbase}")
@@ -256,7 +302,7 @@ package_onnxruntime-cuda() {
 
 package_onnxruntime-opt-cuda() {
   pkgdesc="$_pkgdesc (with CUDA and AVX2 CPU optimizations)"
-  depends+=('cuda' 'cudnn' 'nccl' 'onednn')
+  depends+=('cuda' 'cudnn' 'cudnn-frontend' 'nccl' 'onednn')
   provides=("${pkgbase}=${pkgver}")
   conflicts=("${pkgbase}")
   replaces=("${pkgbase}-opt")
