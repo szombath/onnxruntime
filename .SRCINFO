@@ -1,6 +1,6 @@
 pkgbase = onnxruntime
-	pkgver = 1.26.0
-	pkgrel = 2
+	pkgver = 1.27.0
+	pkgrel = 1
 	url = https://github.com/microsoft/onnxruntime
 	arch = x86_64
 	license = MIT
@@ -16,7 +16,6 @@ pkgbase = onnxruntime
 	makedepends = microsoft-gsl
 	makedepends = eigen
 	makedepends = dlpack
-	makedepends = cpuinfo
 	makedepends = safeint
 	makedepends = python-setuptools
 	makedepends = python-installer
@@ -42,7 +41,12 @@ pkgbase = onnxruntime
 	makedepends = python-flatbuffers
 	makedepends = python-protobuf
 	makedepends = python-packaging
-	source = git+https://github.com/microsoft/onnxruntime#tag=v1.26.0
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
+	source = git+https://github.com/microsoft/onnxruntime#tag=v1.27.0
 	source = onnxruntime-abseil-cpp-20250814.0.tar.gz::https://github.com/abseil/abseil-cpp/archive/refs/tags/20250814.0.tar.gz
 	source = onnxruntime-tensorboard-373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81.tar.gz::https://github.com/tensorflow/tensorboard/archive/373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81.tar.gz
 	source = onnxruntime-re2-2024-07-02.tar.gz::https://github.com/google/re2/archive/refs/tags/2024-07-02.tar.gz
@@ -59,7 +63,8 @@ pkgbase = onnxruntime
 	source = onnxruntime-cuda13-cccl-header-fix.patch
 	source = onnxruntime-cutlass-4.4.2.patch
 	source = onnxruntime-cuda-softmax-stream.patch
-	b2sums = 5f7561e4758d96aae2d6d278f88b200df3ef23b3e909d756d538c45b34b5cb81514262521daa655a1e35bc67acd2f2ddacb2ae89a6415555c0c2b321b16af1e5
+	source = onnxruntime-drop-sharded-moe.patch
+	b2sums = 31274d117bdedc5877ffbe11b2374a26bfaaf7aab05b3e742e8d41a0bb992a9f5a418e6116ba7ffdc805ab465b90cc1fdc4369ce65db43251de5582d303f0be4
 	b2sums = f60f3604215f64f33fad902637360050061ec62cfa6413cafc4cd3794a1898c7ee67f7b6edf78e5cb7c6b0ed86b8d80338ad4abee3f2664e391c2cfae5997220
 	b2sums = eb527f92bfce897a0dba4757ebe6be11020e172b9b219aec5089645a37f9b0e5bd7a977222b20db193c11d834f6dd46a09ca3633039a4f6a84528d9b0ecce057
 	b2sums = 86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96
@@ -76,54 +81,80 @@ pkgbase = onnxruntime
 	b2sums = ea0929ba3bae146ad4a0f670f24162fba0f3f6978c1409f542aaae4565e0377744c9eb6079bc62229be5525f6b22b2923b757bfd8a2f6bba8ef69377fe342486
 	b2sums = dce07bc1fd5b69bd34396dcebccb022d4ae73278dbe6def23006c5ef7ce690dd7af370dcd5efbbdc9a28c7871cc2b7755d44e5171973fc0219aa80f0900962ff
 	b2sums = 40cbcec058f8198c0462139eb5c4bfa251f9c58e9215fc3ce3124796717a36e13cf4197d8ee6f34e2b2b51549649d70a7c3b9214bc3504bfcb2dff043bce1510
+	b2sums = 0e8bb447e6e9dcfa29b47986fc6e7585c4c1320ecdf9e3e9a3a6acb628a6892f0ae9b3d6d523e984380cb0365572aa7839ae682ba327e534d9bdc3dc896e9251
 
 pkgname = onnxruntime-cpu
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (CPU only)
-	provides = onnxruntime=1.26.0
+	provides = onnxruntime=1.27.0
 	conflicts = onnxruntime
 
 pkgname = onnxruntime-cuda
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with CUDA)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = cuda
 	depends = cudnn
 	depends = cudnn-frontend
 	depends = nccl
 	depends = onednn
-	provides = onnxruntime=1.26.0
+	provides = onnxruntime=1.27.0
 	conflicts = onnxruntime
 	replaces = onnxruntime
 
 pkgname = onnxruntime-opt-cuda
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with CUDA and AVX2 CPU optimizations)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = cuda
 	depends = cudnn
 	depends = cudnn-frontend
 	depends = nccl
 	depends = onednn
-	provides = onnxruntime=1.26.0
+	provides = onnxruntime=1.27.0
 	conflicts = onnxruntime
 	replaces = onnxruntime-opt
 
 pkgname = onnxruntime-rocm
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with ROCm)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = rocm-hip-sdk
 	depends = roctracer
 	depends = rccl
 	depends = migraphx
-	provides = onnxruntime=1.26.0
+	provides = onnxruntime=1.27.0
 	conflicts = onnxruntime
 
 pkgname = onnxruntime-opt-rocm
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with ROCm and AVX2 CPU optimizations)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = rocm-hip-sdk
 	depends = roctracer
 	depends = rccl
 	depends = migraphx
-	provides = onnxruntime=1.26.0
+	provides = onnxruntime=1.27.0
 	conflicts = onnxruntime
 
 pkgname = python-onnxruntime-cpu
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (CPU only)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = python-numpy
 	depends = python-psutil
 	depends = python-py-cpuinfo
@@ -133,11 +164,16 @@ pkgname = python-onnxruntime-cpu
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.26.0
+	provides = python-onnxruntime=1.27.0
 	conflicts = python-onnxruntime
 
 pkgname = python-onnxruntime-cuda
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with CUDA)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = cuda
 	depends = cudnn
 	depends = nccl
@@ -151,12 +187,17 @@ pkgname = python-onnxruntime-cuda
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.26.0
+	provides = python-onnxruntime=1.27.0
 	conflicts = python-onnxruntime
 	replaces = python-onnxruntime
 
 pkgname = python-onnxruntime-opt-cuda
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with CUDA and AVX2 CPU optimizations)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = cuda
 	depends = cudnn
 	depends = nccl
@@ -170,12 +211,17 @@ pkgname = python-onnxruntime-opt-cuda
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.26.0
+	provides = python-onnxruntime=1.27.0
 	conflicts = python-onnxruntime
 	replaces = python-onnxruntime-opt
 
 pkgname = python-onnxruntime-rocm
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with ROCm)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = rocm-hip-sdk
 	depends = roctracer
 	depends = rccl
@@ -189,11 +235,16 @@ pkgname = python-onnxruntime-rocm
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.26.0
+	provides = python-onnxruntime=1.27.0
 	conflicts = python-onnxruntime
 
 pkgname = python-onnxruntime-opt-rocm
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (with ROCm and AVX2 CPU optimizations)
+	depends = cpuinfo
+	depends = protobuf
+	depends = glibc
+	depends = libgcc
+	depends = libstdc++
 	depends = rocm-hip-sdk
 	depends = roctracer
 	depends = rccl
@@ -207,5 +258,5 @@ pkgname = python-onnxruntime-opt-rocm
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.26.0
+	provides = python-onnxruntime=1.27.0
 	conflicts = python-onnxruntime

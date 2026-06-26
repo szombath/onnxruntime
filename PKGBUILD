@@ -15,9 +15,9 @@ pkgname=(
   "python-${pkgbase}-rocm"
   "python-${pkgbase}-opt-rocm"
 )
-pkgver=1.26.0
+pkgver=1.27.0
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=2
+pkgrel=1
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -25,8 +25,9 @@ license=('MIT')
 _pydepends=('python-numpy' 'python-psutil' 'python-py-cpuinfo' 'python-sympy'
             'python-scipy' 'python-pillow' 'python-flatbuffers'
             'python-protobuf' 'python-packaging')
+depends=('cpuinfo' 'protobuf' 'glibc' 'libgcc' 'libstdc++')
 makedepends=('git' 'cmake' 'ninja' 'boost' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
-             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'cpuinfo' 'safeint'
+             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'safeint'
              'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
              'cuda' 'cudnn' 'cudnn-frontend' 'nccl'
              'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer' 'migraphx')
@@ -62,8 +63,9 @@ source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
         onnxruntime-abseil-cuda13-member-template.patch
         onnxruntime-cuda13-cccl-header-fix.patch
         onnxruntime-cutlass-4.4.2.patch
-        onnxruntime-cuda-softmax-stream.patch)
-b2sums=('5f7561e4758d96aae2d6d278f88b200df3ef23b3e909d756d538c45b34b5cb81514262521daa655a1e35bc67acd2f2ddacb2ae89a6415555c0c2b321b16af1e5'
+        onnxruntime-cuda-softmax-stream.patch
+        onnxruntime-drop-sharded-moe.patch)
+b2sums=('31274d117bdedc5877ffbe11b2374a26bfaaf7aab05b3e742e8d41a0bb992a9f5a418e6116ba7ffdc805ab465b90cc1fdc4369ce65db43251de5582d303f0be4'
         'f60f3604215f64f33fad902637360050061ec62cfa6413cafc4cd3794a1898c7ee67f7b6edf78e5cb7c6b0ed86b8d80338ad4abee3f2664e391c2cfae5997220'
         'eb527f92bfce897a0dba4757ebe6be11020e172b9b219aec5089645a37f9b0e5bd7a977222b20db193c11d834f6dd46a09ca3633039a4f6a84528d9b0ecce057'
         '86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96'
@@ -79,7 +81,8 @@ b2sums=('5f7561e4758d96aae2d6d278f88b200df3ef23b3e909d756d538c45b34b5cb815142625
         'dd835a301a0ba2cdc6a685c568d9490d652dabcf9dfee0294e765c308bdf7852cf4586f592c0df569d72c2e53e3d413b8020d46de1e2467cfd5b8834a15f1f24'
         'ea0929ba3bae146ad4a0f670f24162fba0f3f6978c1409f542aaae4565e0377744c9eb6079bc62229be5525f6b22b2923b757bfd8a2f6bba8ef69377fe342486'
         'dce07bc1fd5b69bd34396dcebccb022d4ae73278dbe6def23006c5ef7ce690dd7af370dcd5efbbdc9a28c7871cc2b7755d44e5171973fc0219aa80f0900962ff'
-        '40cbcec058f8198c0462139eb5c4bfa251f9c58e9215fc3ce3124796717a36e13cf4197d8ee6f34e2b2b51549649d70a7c3b9214bc3504bfcb2dff043bce1510')
+        '40cbcec058f8198c0462139eb5c4bfa251f9c58e9215fc3ce3124796717a36e13cf4197d8ee6f34e2b2b51549649d70a7c3b9214bc3504bfcb2dff043bce1510'
+        '0e8bb447e6e9dcfa29b47986fc6e7585c4c1320ecdf9e3e9a3a6acb628a6892f0ae9b3d6d523e984380cb0365572aa7839ae682ba327e534d9bdc3dc896e9251')
 
 _valid_sm() {
   # Check PKGBUILDs of python-pytorch and tensorflow for CUDA architectures built by official packages
@@ -123,6 +126,12 @@ prepare() {
   # (cudaStream_t instead of onnxruntime::Stream*); see upstream commit
   # 879f65911a8 which updated softmax.cc but not the orttraining loss kernels.
   patch -p1 -i "${srcdir}/${pkgbase}-cuda-softmax-stream.patch"
+
+  # Drop the distributed ShardedMoE CUDA op. v1.27.0's MoE refactor removed
+  # contrib_ops/cuda/moe/ft_moe/moe_kernel.h (kernels moved to
+  # contrib_ops/cuda/llm/moe_gemm/) but left sharded_moe.{h,cc} #including it,
+  # breaking the build whenever NCCL is enabled. See upstream issue.
+  patch -p1 -i "${srcdir}/${pkgbase}-drop-sharded-moe.patch"
 
   # Fix abseil member alias template parse/instantiation errors with the
   # CUDA 13.3 host front-end and recent GCC. Hoists IfRRef<...>::AddPtr<...>
