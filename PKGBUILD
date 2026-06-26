@@ -17,7 +17,7 @@ pkgname=(
 )
 pkgver=1.26.0
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
-pkgrel=1
+pkgrel=2
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
@@ -26,7 +26,7 @@ _pydepends=('python-numpy' 'python-psutil' 'python-py-cpuinfo' 'python-sympy'
             'python-scipy' 'python-pillow' 'python-flatbuffers'
             'python-protobuf' 'python-packaging')
 makedepends=('git' 'cmake' 'ninja' 'boost' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
-             're2' 'protobuf' 'microsoft-gsl' 'flatbuffers' 'onnx' 'eigen' 'dlpack' 'tensorboard' 'cpuinfo' 'safeint'
+             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'cpuinfo' 'safeint'
              'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
              'cuda' 'cudnn' 'cudnn-frontend' 'nccl'
              'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer' 'migraphx')
@@ -34,18 +34,25 @@ makedepends+=("${_pydepends[@]}")
 # onnxruntime uses internal files of abseil and tensorboard,
 # so we cannot use the binary Arch Linux packages and need to build them
 # from source as part of ONNX runtime.
+# onnx is likewise built from its pinned source (_onnx_ver) rather than the
+# system package: onnx ships no generated onnx.pb.h, so its ABI is realized
+# against whatever protobuf/abseil it was last built with. A system onnx
+# rebuilt against a newer toolchain than onnxruntime's bundled abseil yields
+# undefined-symbol link failures, so we pin and vendor it here.
 # TODO Check for new versions in cmake/deps.txt with every onnxruntime release
 _abseil_ver=20250814.0
 _tensorboard_ver=373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81
 _re2_ver=2024-07-02
 _flatbuffers_ver=23.5.26
 _cutlass_ver=4.4.2
+_onnx_ver=1.21.0
 source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
         "${pkgbase}-abseil-cpp-${_abseil_ver}.tar.gz::https://github.com/abseil/abseil-cpp/archive/refs/tags/${_abseil_ver}.tar.gz"
         "${pkgbase}-tensorboard-${_tensorboard_ver}.tar.gz::https://github.com/tensorflow/tensorboard/archive/${_tensorboard_ver}.tar.gz"
         "${pkgbase}-re2-${_re2_ver}.tar.gz::https://github.com/google/re2/archive/refs/tags/${_re2_ver}.tar.gz"
         "${pkgbase}-flatbuffers-${_flatbuffers_ver}.tar.gz::https://github.com/google/flatbuffers/archive/refs/tags/v${_flatbuffers_ver}.tar.gz"
         "${pkgbase}-cutlass-${_cutlass_ver}.tar.gz::https://github.com/NVIDIA/cutlass/archive/refs/tags/v${_cutlass_ver}.tar.gz"
+        "${pkgbase}-onnx-${_onnx_ver}.tar.gz::https://github.com/onnx/onnx/archive/refs/tags/v${_onnx_ver}.tar.gz"
         "${pkgbase}-install-orttraining-files.patch"
         "${pkgbase}-system-dnnl.patch"
         "${pkgbase}-system-flatbuffers.patch"
@@ -62,8 +69,9 @@ b2sums=('5f7561e4758d96aae2d6d278f88b200df3ef23b3e909d756d538c45b34b5cb815142625
         '86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96'
         '147425e7c018072f4ae4cdb3e034a4f434362d88d5e27b09375965993c279acfbed36064014c8f4fbe3fb81175ac0aa9b07629675e2c7ad33d59a9c85f2c3bb8'
         'd542daa5a809b1dc8cca81319b9b45437ad9965aba4d6b4fbf7a6d6477f241f0b9aa94045834977dcd16924ed88cde2c2da5795affb02290cb2247de25f0ec3e'
+        '1ddd7389135700e1112cfdd82a07482b989f819675e980daeb3225543e84eb40d80f4cd7a3281eaf8c4b34533767b183602b6478321c8e7decb920a0beb5c742'
         'af5a5524dd9b5fe0052d2d0da232de7f219d4abffb37a7a321145b428d06fcb2901ab4e76b6754440146c223fc761bcbdfeee230167d33aa4434b82a1ebad5c0'
-        '57c79382537f5bd25a891de3a99415a6dd8f490676df213016e897040c88e28fb5f5a5c3a8a98057e3f6630edb3ddcaeae36dcc47d5354abaafafc36e579f731'
+        '619775050c51633a5431fd7ed433097241a399b6c183eeef1753b9e6eca0f741237840fc6e6268073f51b4b5744a7578266cc38901eefd004170840271a5359c'
         '207f020f310a7b447b4dc2fac74819f80099f088fdad6e42d67d0f01aa35bb5b9475bd006d9bec318127ae2db3d7ae3df33382fa16339d936c1dfb3832010837'
         'dfa9e70fdcd0f2c2fafec7f1961e66fa9661a03b8dba08c7d2329d018d8ebd4481337c0ddc6de393d7f4a032bd6011ccfad28d89aa0142ce9e01ead0bafcf079'
         'b0b58e2eb42a38956ef9e86b853d413c2fd002737d37721962dd9e1fc5c39c1ef4594325c6f6081f2b4cdce39a14907dbebc156645fa25ff3f2bbbce6417cd14'
@@ -131,6 +139,16 @@ prepare() {
   cd "${srcdir}/cutlass-${_cutlass_ver}"
   patch -p1 -i "${srcdir}/${pkgbase}-cutlass-${_cutlass_ver}.patch"
 
+  # Build onnx from the pinned source (cmake/deps.txt v${_onnx_ver}) instead of
+  # the system onnx package. onnx ships no generated onnx.pb.h; that ABI is
+  # realized at build time against the current protobuf/abseil, so a system
+  # onnx rebuilt against a newer toolchain than onnxruntime's bundled abseil
+  # produces undefined-symbol link failures. Vendoring keeps the ABI matched.
+  # As with cutlass, FETCHCONTENT_SOURCE_DIR makes onnxruntime skip its
+  # PATCH_COMMAND, so apply onnxruntime's onnx patch here.
+  cd "${srcdir}/onnx-${_onnx_ver}"
+  patch -p1 -i "${srcdir}/${pkgbase}/cmake/patches/onnx/onnx.patch"
+
   cd "${srcdir}"
   cp -r "${pkgbase}" "${pkgbase}-cpu"
   cp -r "${pkgbase}" "${pkgbase}-cuda"
@@ -164,6 +182,7 @@ build() {
     -DFETCHCONTENT_SOURCE_DIR_RE2="$srcdir/re2-${_re2_ver}"
     -DFETCHCONTENT_SOURCE_DIR_FLATBUFFERS="$srcdir/flatbuffers-${_flatbuffers_ver}"
     -DFETCHCONTENT_SOURCE_DIR_CUTLASS="$srcdir/cutlass-${_cutlass_ver}"
+    -DFETCHCONTENT_SOURCE_DIR_ONNX="$srcdir/onnx-${_onnx_ver}"
     -DONNX_CUSTOM_PROTOC_EXECUTABLE=/usr/bin/protoc
     -DCMAKE_CXX_STANDARD=20)
 
