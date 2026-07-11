@@ -15,7 +15,7 @@ pkgname=(
   "python-${pkgbase}-rocm"
   "python-${pkgbase}-opt-rocm"
 )
-pkgver=1.27.0
+pkgver=1.27.1
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
 pkgrel=1
 arch=('x86_64')
@@ -65,7 +65,7 @@ source=("git+https://github.com/microsoft/onnxruntime#tag=v${pkgver}"
         onnxruntime-cutlass-4.4.2.patch
         onnxruntime-cuda-softmax-stream.patch
         onnxruntime-drop-sharded-moe.patch)
-b2sums=('31274d117bdedc5877ffbe11b2374a26bfaaf7aab05b3e742e8d41a0bb992a9f5a418e6116ba7ffdc805ab465b90cc1fdc4369ce65db43251de5582d303f0be4'
+b2sums=('cf4b741a87d8406e45e9fdf8e6b453c6a7aa728af00ac66130119b869f7cd9981ab09a10a76ed0c64eec54b4eef7ce096b83f696194938a8ac4232a9a16ad804'
         'f60f3604215f64f33fad902637360050061ec62cfa6413cafc4cd3794a1898c7ee67f7b6edf78e5cb7c6b0ed86b8d80338ad4abee3f2664e391c2cfae5997220'
         'eb527f92bfce897a0dba4757ebe6be11020e172b9b219aec5089645a37f9b0e5bd7a977222b20db193c11d834f6dd46a09ca3633039a4f6a84528d9b0ecce057'
         '86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96'
@@ -104,9 +104,6 @@ prepare() {
 
   patch -Np1 -i "${srcdir}/${pkgbase}-install-orttraining-files.patch"
   patch -Np1 -i "${srcdir}/${pkgbase}-system-flatbuffers.patch"
-
-  # Fix build with abseil 20250814; see https://github.com/microsoft/onnxruntime/issues/25815
-  sed -i '/^absl::low_level_hash$/d' cmake/external/abseil-cpp.cmake
 
   # Fix thrust and cub API usage
   patch -p1 -i "${srcdir}/fix-thrust-api.patch"

@@ -1,5 +1,5 @@
 pkgbase = onnxruntime
-	pkgver = 1.27.0
+	pkgver = 1.27.1
 	pkgrel = 1
 	url = https://github.com/microsoft/onnxruntime
 	arch = x86_64
@@ -46,7 +46,7 @@ pkgbase = onnxruntime
 	depends = glibc
 	depends = libgcc
 	depends = libstdc++
-	source = git+https://github.com/microsoft/onnxruntime#tag=v1.27.0
+	source = git+https://github.com/microsoft/onnxruntime#tag=v1.27.1
 	source = onnxruntime-abseil-cpp-20250814.0.tar.gz::https://github.com/abseil/abseil-cpp/archive/refs/tags/20250814.0.tar.gz
 	source = onnxruntime-tensorboard-373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81.tar.gz::https://github.com/tensorflow/tensorboard/archive/373eb09e4c5d2b3cc2493f0949dc4be6b6a45e81.tar.gz
 	source = onnxruntime-re2-2024-07-02.tar.gz::https://github.com/google/re2/archive/refs/tags/2024-07-02.tar.gz
@@ -64,7 +64,7 @@ pkgbase = onnxruntime
 	source = onnxruntime-cutlass-4.4.2.patch
 	source = onnxruntime-cuda-softmax-stream.patch
 	source = onnxruntime-drop-sharded-moe.patch
-	b2sums = 31274d117bdedc5877ffbe11b2374a26bfaaf7aab05b3e742e8d41a0bb992a9f5a418e6116ba7ffdc805ab465b90cc1fdc4369ce65db43251de5582d303f0be4
+	b2sums = cf4b741a87d8406e45e9fdf8e6b453c6a7aa728af00ac66130119b869f7cd9981ab09a10a76ed0c64eec54b4eef7ce096b83f696194938a8ac4232a9a16ad804
 	b2sums = f60f3604215f64f33fad902637360050061ec62cfa6413cafc4cd3794a1898c7ee67f7b6edf78e5cb7c6b0ed86b8d80338ad4abee3f2664e391c2cfae5997220
 	b2sums = eb527f92bfce897a0dba4757ebe6be11020e172b9b219aec5089645a37f9b0e5bd7a977222b20db193c11d834f6dd46a09ca3633039a4f6a84528d9b0ecce057
 	b2sums = 86b915dc0b8e68b35fd0ed20bedd5e9c5781826442f332d115166a9a70f34b7e9b4ef60206264035b82652230d42a3c6aa2b91a774fca3b1e415ce65ace2ae96
@@ -85,7 +85,7 @@ pkgbase = onnxruntime
 
 pkgname = onnxruntime-cpu
 	pkgdesc = Cross-platform, high performance scoring engine for ML models (CPU only)
-	provides = onnxruntime=1.27.0
+	provides = onnxruntime=1.27.1
 	conflicts = onnxruntime
 
 pkgname = onnxruntime-cuda
@@ -100,7 +100,7 @@ pkgname = onnxruntime-cuda
 	depends = cudnn-frontend
 	depends = nccl
 	depends = onednn
-	provides = onnxruntime=1.27.0
+	provides = onnxruntime=1.27.1
 	conflicts = onnxruntime
 	replaces = onnxruntime
 
@@ -116,7 +116,7 @@ pkgname = onnxruntime-opt-cuda
 	depends = cudnn-frontend
 	depends = nccl
 	depends = onednn
-	provides = onnxruntime=1.27.0
+	provides = onnxruntime=1.27.1
 	conflicts = onnxruntime
 	replaces = onnxruntime-opt
 
@@ -131,7 +131,7 @@ pkgname = onnxruntime-rocm
 	depends = roctracer
 	depends = rccl
 	depends = migraphx
-	provides = onnxruntime=1.27.0
+	provides = onnxruntime=1.27.1
 	conflicts = onnxruntime
 
 pkgname = onnxruntime-opt-rocm
@@ -145,7 +145,7 @@ pkgname = onnxruntime-opt-rocm
 	depends = roctracer
 	depends = rccl
 	depends = migraphx
-	provides = onnxruntime=1.27.0
+	provides = onnxruntime=1.27.1
 	conflicts = onnxruntime
 
 pkgname = python-onnxruntime-cpu
@@ -164,7 +164,7 @@ pkgname = python-onnxruntime-cpu
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.27.0
+	provides = python-onnxruntime=1.27.1
 	conflicts = python-onnxruntime
 
 pkgname = python-onnxruntime-cuda
@@ -187,7 +187,7 @@ pkgname = python-onnxruntime-cuda
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.27.0
+	provides = python-onnxruntime=1.27.1
 	conflicts = python-onnxruntime
 	replaces = python-onnxruntime
 
@@ -211,7 +211,7 @@ pkgname = python-onnxruntime-opt-cuda
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.27.0
+	provides = python-onnxruntime=1.27.1
 	conflicts = python-onnxruntime
 	replaces = python-onnxruntime-opt
 
@@ -235,7 +235,7 @@ pkgname = python-onnxruntime-rocm
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.27.0
+	provides = python-onnxruntime=1.27.1
 	conflicts = python-onnxruntime
 
 pkgname = python-onnxruntime-opt-rocm
@@ -258,5 +258,5 @@ pkgname = python-onnxruntime-opt-rocm
 	depends = python-flatbuffers
 	depends = python-protobuf
 	depends = python-packaging
-	provides = python-onnxruntime=1.27.0
+	provides = python-onnxruntime=1.27.1
 	conflicts = python-onnxruntime
