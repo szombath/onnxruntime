@@ -4,16 +4,7 @@
 
 pkgbase=onnxruntime
 pkgname=(
-  "${pkgbase}-cpu"
-  "${pkgbase}-cuda"
   "${pkgbase}-opt-cuda"
-  "${pkgbase}-rocm"
-  "${pkgbase}-opt-rocm"
-  "python-${pkgbase}-cpu"
-  "python-${pkgbase}-cuda"
-  "python-${pkgbase}-opt-cuda"
-  "python-${pkgbase}-rocm"
-  "python-${pkgbase}-opt-rocm"
 )
 pkgver=1.29.0
 _pkgdesc='Cross-platform, high performance scoring engine for ML models'
@@ -21,17 +12,10 @@ pkgrel=3
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
-# https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/python/tools/transformers/requirements.txt
-_pydepends=('python-numpy' 'python-psutil' 'python-py-cpuinfo' 'python-sympy'
-            'python-scipy' 'python-pillow' 'python-flatbuffers'
-            'python-protobuf' 'python-packaging')
 depends=('cpuinfo' 'protobuf' 'glibc' 'libgcc' 'libstdc++')
 makedepends=('git' 'cmake' 'ninja' 'boost' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
-             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'safeint'
-             'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
-             'cuda' 'cudnn' 'cudnn-frontend' 'nccl'
-             'rocm-toolchain' 'rocm-hip-sdk' 'hipify-clang' 'rocm-smi-lib' 'roctracer' 'migraphx')
-makedepends+=("${_pydepends[@]}")
+             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'safeint' 'onednn'
+             'cuda' 'cudnn' 'cudnn-frontend' 'nccl')
 # onnxruntime uses internal files of abseil and tensorboard,
 # so we cannot use the binary Arch Linux packages and need to build them
 # from source as part of ONNX runtime.
@@ -85,11 +69,6 @@ b2sums=('8fdc31605d139480199860fc303a537bf67635bf60eb1d40e850b0270b422b070855cf4
 _valid_sm() {
   # Check PKGBUILDs of python-pytorch and tensorflow for CUDA architectures built by official packages
   echo "75-real;80-real;86-real;87-real;88-real;89-real;90-real;100-real;103-real;110-real;120-real;121-real;121-virtual"
-}
-
-_valid_gfx() {
-  # gfx950 is not supported by rocPRIM
-  echo "$(rocm-supported-gfx -e gfx950)"
 }
 
 prepare() {
@@ -151,16 +130,10 @@ prepare() {
   patch -p1 -i "${srcdir}/${pkgbase}/cmake/patches/onnx/onnx.patch"
 
   cd "${srcdir}"
-  cp -r "${pkgbase}" "${pkgbase}-cpu"
-  cp -r "${pkgbase}" "${pkgbase}-cuda"
   cp -r "${pkgbase}" "${pkgbase}-opt-cuda"
-  cp -r "${pkgbase}" "${pkgbase}-rocm"
-  cp -r "${pkgbase}" "${pkgbase}-opt-rocm"
 }
 
 build() {
-  # Use -Donnxruntime_ENABLE_LAZY_TENSOR=OFF as it requires patched python-pytorch
-  # See: https://github.com/microsoft/onnxruntime/pull/10460 https://github.com/pytorch/pytorch/pulls/wschin
   local _cmake_args=(
     --compile-no-warning-as-error
     -S cmake
@@ -170,7 +143,6 @@ build() {
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
     -DCMAKE_BUILD_TYPE=None
     -DCMAKE_INSTALL_PREFIX=/usr
-    -Donnxruntime_ENABLE_PYTHON=ON
     -Donnxruntime_BUILD_SHARED_LIB=ON
     -Donnxruntime_BUILD_UNIT_TESTS=OFF
     -DBUILD_TESTING=OFF
@@ -217,42 +189,10 @@ build() {
 
   # Disable composable kernel support as onnxruntime doesn't work with tagged
   # upstream release.
-  #
-  # With USE_ROCM=ON NCCL is mapped on RCCL.
-  local _cmake_rocm_args=("${_cmake_args[@]}"
-    -DCMAKE_HIP_ARCHITECTURES="$(_valid_gfx)"
-    -DCMAKE_HIP_FLAGS="-DHIPBLAS_USE_HIP_HALF=1 -DROCM_USE_FLOAT16=1"
-    -Donnxruntime_USE_DNNL=ON
-    -Donnxruntime_USE_MIGRAPHX=ON
-    -Donnxruntime_USE_NCCL=ON
-    -Donnxruntime_BUILD_KERNEL_EXPLORER=OFF
-    -Donnxruntime_USE_COMPOSABLE_KERNEL=OFF
-    -Donnxruntime_NCCL_HOME=/opt/rocm
-    -Donnxruntime_ROCM_HOME=/opt/rocm)
 
   # For LTO everything needs to be compiled with the gcc version of CUDA
   export CXX="$NVCC_CCBIN"
   export CC="${NVCC_CCBIN/g++/gcc}"
-
-
-  ##### onnxruntime-cpu
-  echo "Build onnxruntime without GPU support"
-  cd "${srcdir}/${pkgbase}-cpu"
-  cmake "${_cmake_args[@]}"
-  cmake --build build
-
-  cp -r build/onnxruntime/* onnxruntime
-  python -m build --wheel --no-isolation
-
-  ##### onnxruntime-cuda
-
-  echo "Build onnxruntime with CUDA without optimization"
-  cd "${srcdir}/${pkgbase}-cuda"
-  cmake "${_cmake_cuda_args[@]}"
-  cmake --build build
-
-  cp -r build/onnxruntime/* onnxruntime
-  python -m build --wheel --no-isolation
 
 
   ##### onnxruntime-opt-cuda
@@ -268,60 +208,6 @@ build() {
 
   cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
-
-
-  ##### onnxruntime-rocm
-
-  echo "Build onnxruntime with ROCm without optimization"
-  cd "${srcdir}/${pkgbase}-rocm"
-  cmake "${_cmake_rocm_args[@]}"
-  cmake --build build
-
-  cp -r build/onnxruntime/* onnxruntime
-  sed -i 's/is_migraphx = False/is_migraphx = True/g' setup.py
-  python -m build --wheel --no-isolation
-
-
-  ##### onnxruntime-opt-rocm
-
-  echo "Build onnxruntime with ROCm with AVX optimizations"
-  cd "${srcdir}/${pkgbase}-opt-rocm"
-  echo 'string(APPEND CMAKE_C_FLAGS " -march=haswell")' \
-    >> cmake/adjust_global_compile_flags.cmake
-  echo 'string(APPEND CMAKE_CXX_FLAGS " -march=haswell")' \
-    >> cmake/adjust_global_compile_flags.cmake
-  cmake "${_cmake_rocm_args[@]}"
-  cmake --build build
-
-  cp -r build/onnxruntime/* onnxruntime
-  sed -i 's/is_migraphx = False/is_migraphx = True/g' setup.py
-  python -m build --wheel --no-isolation
-}
-
-package_onnxruntime-cpu() {
-  pkgdesc="$_pkgdesc (CPU only)"
-  provides=("${pkgbase}=${pkgver}")
-  conflicts=("${pkgbase}")
-
-  cd "${pkgbase}-cpu"
-  DESTDIR="${pkgdir}" cmake --install build
-
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_onnxruntime-cuda() {
-  pkgdesc="$_pkgdesc (with CUDA)"
-  depends+=('cuda' 'cudnn' 'cudnn-frontend' 'nccl' 'onednn')
-  provides=("${pkgbase}=${pkgver}")
-  conflicts=("${pkgbase}")
-  replaces=("${pkgbase}")
-
-  cd "${pkgbase}-cuda"
-  DESTDIR="${pkgdir}" cmake --install build
-
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
 package_onnxruntime-opt-cuda() {
@@ -338,92 +224,3 @@ package_onnxruntime-opt-cuda() {
   install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
-package_onnxruntime-rocm() {
-  pkgdesc="$_pkgdesc (with ROCm)"
-  depends+=('rocm-hip-sdk' 'roctracer' 'rccl' 'migraphx')
-  provides=("${pkgbase}=${pkgver}")
-  conflicts=("${pkgbase}")
-
-  cd "${pkgbase}-rocm"
-  DESTDIR="${pkgdir}" cmake --install build
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_onnxruntime-opt-rocm() {
-  pkgdesc="$_pkgdesc (with ROCm and AVX2 CPU optimizations)"
-  depends+=('rocm-hip-sdk' 'roctracer' 'rccl' 'migraphx')
-  provides=("${pkgbase}=${pkgver}")
-  conflicts=("${pkgbase}")
-
-  cd "${pkgbase}-opt-rocm"
-  DESTDIR="${pkgdir}" cmake --install build
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_python-onnxruntime-cpu() {
-  pkgdesc="$_pkgdesc (CPU only)"
-  depends+=("${_pydepends[@]}")
-  provides=("python-${pkgbase}=${pkgver}")
-  conflicts=("python-${pkgbase}")
-
-  cd "${pkgbase}-cpu"
-  python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_python-onnxruntime-cuda() {
-  pkgdesc="$_pkgdesc (with CUDA)"
-  depends+=('cuda' 'cudnn' 'nccl' 'onednn')
-  depends+=("${_pydepends[@]}")
-  provides=("python-${pkgbase}=${pkgver}")
-  conflicts=("python-${pkgbase}")
-  replaces=("python-${pkgbase}")
-
-  cd "${pkgbase}-cuda"
-  python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_python-onnxruntime-opt-cuda() {
-  pkgdesc="$_pkgdesc (with CUDA and AVX2 CPU optimizations)"
-  depends+=('cuda' 'cudnn' 'nccl' 'onednn')
-  depends+=("${_pydepends[@]}")
-  provides=("python-${pkgbase}=${pkgver}")
-  conflicts=("python-${pkgbase}")
-  replaces=("python-${pkgbase}-opt")
-
-  cd "${pkgbase}-opt-cuda"
-  python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_python-onnxruntime-rocm() {
-  pkgdesc="$_pkgdesc (with ROCm)"
-  depends+=('rocm-hip-sdk' 'roctracer' 'rccl' 'migraphx')
-  depends+=("${_pydepends[@]}")
-  provides=("python-${pkgbase}=${pkgver}")
-  conflicts=("python-${pkgbase}")
-
-  cd "${pkgbase}-rocm"
-  python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
-
-package_python-onnxruntime-opt-rocm() {
-  pkgdesc="$_pkgdesc (with ROCm and AVX2 CPU optimizations)"
-  depends+=('rocm-hip-sdk' 'roctracer' 'rccl' 'migraphx')
-  depends+=("${_pydepends[@]}")
-  provides=("python-${pkgbase}=${pkgver}")
-  conflicts=("python-${pkgbase}")
-
-  cd "${pkgbase}-opt-rocm"
-  python -m installer --destdir="${pkgdir}" dist/*.whl
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
-}
