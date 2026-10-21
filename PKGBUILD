@@ -4,6 +4,7 @@
 
 pkgbase=onnxruntime
 pkgname=(
+  "${pkgbase}-cpu"
   "${pkgbase}-opt-cuda"
 )
 pkgver=1.29.0
@@ -12,10 +13,16 @@ pkgrel=3
 arch=('x86_64')
 url='https://github.com/microsoft/onnxruntime'
 license=('MIT')
+# https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/python/tools/transformers/requirements.txt
+_pydepends=('python-numpy' 'python-psutil' 'python-py-cpuinfo' 'python-sympy'
+            'python-scipy' 'python-pillow' 'python-flatbuffers'
+            'python-protobuf' 'python-packaging')
 depends=('cpuinfo' 'protobuf' 'glibc' 'libgcc' 'libstdc++')
 makedepends=('git' 'cmake' 'ninja' 'boost' 'pybind11' 'nlohmann-json' 'chrono-date' 'cxxopts'
-             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'safeint' 'onednn'
+             'protobuf' 'microsoft-gsl' 'eigen' 'dlpack' 'safeint'
+             'python-setuptools' 'python-installer' 'python-wheel' 'python-build' 'onednn'
              'cuda' 'cudnn' 'cudnn-frontend' 'nccl')
+makedepends+=("${_pydepends[@]}")             
 # onnxruntime uses internal files of abseil and tensorboard,
 # so we cannot use the binary Arch Linux packages and need to build them
 # from source as part of ONNX runtime.
@@ -130,6 +137,7 @@ prepare() {
   patch -p1 -i "${srcdir}/${pkgbase}/cmake/patches/onnx/onnx.patch"
 
   cd "${srcdir}"
+  cp -r "${pkgbase}" "${pkgbase}-cpu"
   cp -r "${pkgbase}" "${pkgbase}-opt-cuda"
 }
 
@@ -195,6 +203,16 @@ build() {
   export CC="${NVCC_CCBIN/g++/gcc}"
 
 
+  ##### onnxruntime-cpu
+  echo "Build onnxruntime without GPU support"
+  cd "${srcdir}/${pkgbase}-cpu"
+  cmake "${_cmake_args[@]}"
+  cmake --build build
+
+  cp -r build/onnxruntime/* onnxruntime
+  python -m build --wheel --no-isolation
+
+
   ##### onnxruntime-opt-cuda
 
   echo "Build onnxruntime with CUDA with AVX optimizations"
@@ -208,6 +226,18 @@ build() {
 
   cp -r build/onnxruntime/* onnxruntime
   python -m build --wheel --no-isolation
+}
+
+package_onnxruntime-cpu() {
+  pkgdesc="$_pkgdesc (CPU only)"
+  provides=("${pkgbase}=${pkgver}")
+  conflicts=("${pkgbase}")
+
+  cd "${pkgbase}-cpu"
+  DESTDIR="${pkgdir}" cmake --install build
+
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 ThirdPartyNotices.txt "${pkgdir}/usr/share/licenses/${pkgname}/ThirdPartyNotices.txt"
 }
 
 package_onnxruntime-opt-cuda() {
